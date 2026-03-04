@@ -14,6 +14,9 @@ import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -43,6 +46,7 @@ public class EtfSimulatorResource {
 		response.put("status", "ok");
 		response.put("backend", "liferay-osgi-jaxrs");
 		response.put("elasticsearch", _getElasticsearchHealth());
+		response.put("pocWarning", _pocWarning());
 
 		return Response.ok(response.toString()).build();
 	}
@@ -62,6 +66,25 @@ public class EtfSimulatorResource {
 
 		response.put("items", etfs);
 		response.put("count", etfs.length());
+		response.put("pocWarning", _pocWarning());
+
+		return Response.ok(response.toString()).build();
+	}
+
+	@GET
+	@Path("/benchmarks")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response benchmarks() {
+		JSONArray items = JSONFactoryUtil.createJSONArray();
+
+		items.put(_benchmark("Ibovespa", 0.16, true));
+		items.put(_benchmark("CDI", 0.12, true));
+
+		JSONObject response = JSONFactoryUtil.createJSONObject();
+
+		response.put("items", items);
+		response.put("count", items.length());
+		response.put("pocWarning", _pocWarning());
 
 		return Response.ok(response.toString()).build();
 	}
@@ -73,13 +96,15 @@ public class EtfSimulatorResource {
 	public Response simulate(String payload) {
 		JSONObject request;
 
+		if ((payload == null) || payload.trim().isEmpty()) {
+			return _badRequest("Payload JSON obrigatório");
+		}
+
 		try {
 			request = JSONFactoryUtil.createJSONObject(payload);
 		}
 		catch (Exception exception) {
-			JSONObject error = JSONFactoryUtil.createJSONObject();
-			error.put("error", "Payload JSON inválido");
-			return Response.status(Response.Status.BAD_REQUEST).entity(error.toString()).build();
+			return _badRequest("Payload JSON inválido");
 		}
 
 		double aporteInicial = request.getDouble("aporteInicial", 10000);
@@ -88,10 +113,24 @@ public class EtfSimulatorResource {
 		double taxaAnualEsperada = request.getDouble("taxaAnualEsperada", 0.10);
 		double taxaAdministracaoAnual = request.getDouble("taxaAdministracaoAnual", 0.004);
 
-		double taxaLiquidaAnual = Math.max(
-			0,
-			taxaAnualEsperada - taxaAdministracaoAnual
-		);
+		List<String> validationErrors = _validateRequest(
+			aporteInicial, aporteMensal, prazoMeses, taxaAnualEsperada,
+			taxaAdministracaoAnual);
+
+		if (!validationErrors.isEmpty()) {
+			JSONObject error = JSONFactoryUtil.createJSONObject();
+			JSONArray errors = JSONFactoryUtil.createJSONArray();
+
+			for (String validationError : validationErrors) {
+				errors.put(validationError);
+			}
+
+			error.put("error", "Parâmetros inválidos");
+			error.put("errors", errors);
+			return Response.status(Response.Status.BAD_REQUEST).entity(error.toString()).build();
+		}
+
+		double taxaLiquidaAnual = taxaAnualEsperada - taxaAdministracaoAnual;
 
 		BigDecimal saldo = _toMoney(aporteInicial);
 		BigDecimal totalInvestido = _toMoney(aporteInicial);
@@ -134,8 +173,20 @@ public class EtfSimulatorResource {
 		response.put("ganhoEstimado", _round(ganho));
 		response.put("retornoPercentual", _round(retornoPercentual));
 		response.put("serieMensal", serieMensal);
+		response.put("benchmarkDisclaimer", "Benchmarks comparativos podem estar em cenário hipotético na PoC.");
+		response.put("pocWarning", _pocWarning());
 
 		return Response.ok(response.toString()).build();
+	}
+
+	private JSONObject _benchmark(String nome, double taxaAnualEsperada, boolean hipotetico) {
+		JSONObject benchmark = JSONFactoryUtil.createJSONObject();
+
+		benchmark.put("nome", nome);
+		benchmark.put("taxaAnualEsperada", taxaAnualEsperada);
+		benchmark.put("hipotetico", hipotetico);
+
+		return benchmark;
 	}
 
 	private JSONObject _etf(
@@ -151,6 +202,47 @@ public class EtfSimulatorResource {
 		etf.put("taxaAdministracaoAnual", taxaAdmAnual);
 
 		return etf;
+	}
+
+	private Response _badRequest(String message) {
+		JSONObject error = JSONFactoryUtil.createJSONObject();
+
+		error.put("error", message);
+
+		return Response.status(Response.Status.BAD_REQUEST).entity(error.toString()).build();
+	}
+
+	private String _pocWarning() {
+		return "Endpoint aberto para PoC local. Não utilizar em produção.";
+	}
+
+	private List<String> _validateRequest(
+		double aporteInicial, double aporteMensal, int prazoMeses,
+		double taxaAnualEsperada, double taxaAdministracaoAnual) {
+
+		List<String> errors = new ArrayList<>();
+
+		if ((aporteInicial < 0) || (aporteInicial > 100000000)) {
+			errors.add("aporteInicial deve estar entre 0 e 100000000");
+		}
+
+		if ((aporteMensal < 0) || (aporteMensal > 10000000)) {
+			errors.add("aporteMensal deve estar entre 0 e 10000000");
+		}
+
+		if ((prazoMeses < 1) || (prazoMeses > 480)) {
+			errors.add("prazoMeses deve estar entre 1 e 480");
+		}
+
+		if ((taxaAnualEsperada < -0.95) || (taxaAnualEsperada > 1.0)) {
+			errors.add("taxaAnualEsperada deve estar entre -0.95 e 1.0");
+		}
+
+		if ((taxaAdministracaoAnual < 0) || (taxaAdministracaoAnual > 0.2)) {
+			errors.add("taxaAdministracaoAnual deve estar entre 0 e 0.2");
+		}
+
+		return errors;
 	}
 
 	private JSONObject _getElasticsearchHealth() {

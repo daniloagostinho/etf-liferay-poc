@@ -15,6 +15,8 @@ import {ChartData, ChartOptions} from 'chart.js';
 export class AppComponent implements OnInit {
 	@Input('title') title = 'liferay-sample-custom-element-3';
 
+	benchmarkDisclaimer = '';
+	benchmarks: Array<{nome: string; taxaAnualEsperada: number; hipotetico: boolean}> = [];
 	errorMessage = '';
 	etfs: any[] = [];
 	health: any;
@@ -86,7 +88,7 @@ export class AppComponent implements OnInit {
 		{label: '12M', months: 12},
 		{label: '6M', months: 6},
 		{label: '3M', months: 3},
-		{label: 'Ano atual', months: 14},
+		{label: 'Ano atual', months: new Date().getMonth() + 1},
 	];
 
 	selectedMonths = 36;
@@ -96,8 +98,22 @@ export class AppComponent implements OnInit {
 
 	ngOnInit(): void {
 		this.loadHealth();
+		this.loadBenchmarks();
 		this.loadEtfs();
 		this.simulate();
+	}
+
+	loadBenchmarks() {
+		this.http.get<any>('/o/etf-simulator/v1/benchmarks').subscribe({
+			next: (response) => {
+				this.benchmarks = response.items || [];
+				this.updateChart();
+			},
+			error: (error) => {
+				console.error(error);
+				this.benchmarks = [];
+			},
+		});
 	}
 
 	selectPeriod(months: number) {
@@ -138,6 +154,7 @@ export class AppComponent implements OnInit {
 		this.http.post<any>('/o/etf-simulator/v1/simulate', this.form).subscribe({
 			next: (response) => {
 				this.result = response;
+				this.benchmarkDisclaimer = response.benchmarkDisclaimer || '';
 				this.buildChartSeries();
 				this.updateChart();
 				this.loading = false;
@@ -161,12 +178,19 @@ export class AppComponent implements OnInit {
 		const aporteInicial = Number(this.result.aporteInicial || 0);
 		const aporteMensal = Number(this.result.aporteMensal || 0);
 
+		const benchmarkMap = new Map(
+			this.benchmarks.map((benchmark) => [benchmark.nome, benchmark.taxaAnualEsperada])
+		);
+
+		const cdiRate = benchmarkMap.get('CDI') ?? 0.12;
+		const ibovRate = benchmarkMap.get('Ibovespa') ?? 0.16;
+
 		this.fullChartPoints = serieMensal.map((item, index) => {
 			const mes = index + 1;
 			const invested = aporteInicial + aporteMensal * mes;
 			const portfolio = invested > 0 ? ((item.saldo - invested) / invested) * 100 : 0;
-			const cdi = this.compoundReturn(0.12, mes) * 100;
-			const ibov = this.compoundReturn(0.16, mes) * 100 + Math.sin(mes / 2.7) * 2.4;
+			const cdi = this.compoundReturn(cdiRate, mes) * 100;
+			const ibov = this.compoundReturn(ibovRate, mes) * 100;
 
 			return {
 				cdi,
