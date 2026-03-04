@@ -2,8 +2,6 @@
 
 ## 🚀 Guia de Execução
 
-Para o Liferay sem Docker rode os comandos:
-
 ### Instalação Inicial
 
 ```bash
@@ -21,13 +19,13 @@ Se quiser garantir tudo de uma vez (todos os CEs + módulos):
 ./gradlew deploy
 ```
 
-## 📋 Pré-requisitos
+## Pré-requisitos
 
 - **Java**: Versão compatível com seu DXP (normalmente JDK 17)
 - **Node/Yarn**: Necessário para o build dos Client Extensions
 - **Internet**: Obrigatória no primeiro `initBundle` (será necessário baixar bundle e dependências)
 
-## 🔗 Endpoints da API
+## Endpoints da API
 
 Com o servidor ligado, a API fica disponível nos seguintes endpoints:
 
@@ -39,7 +37,7 @@ GET  /o/etf-simulator/v1/simulations
 POST /o/etf-simulator/v1/simulate
 ```
 
-## 🧠 Backend (Liferay + Java)
+## Backend (Liferay + Java)
 
 ### Tecnologias
 
@@ -83,7 +81,7 @@ O Elasticsearch deixou de ser apenas “health check” e passou a ser usado de 
 
 Observação: por ser PoC local, o backend mantém aviso explícito de não uso em produção.
 
-## 🎨 Frontend (Angular Client Extension)
+## Frontend (Angular Client Extension)
 
 ### Tecnologias/libs
 
@@ -110,7 +108,7 @@ Observação: por ser PoC local, o backend mantém aviso explícito de não uso 
 - Gráfico de linhas com seleção de período (36M, 24M, 12M, 6M, 3M, Ano atual)
 - Tabela de histórico integrada ao Elasticsearch (datas e métricas formatadas)
 
-## ⚠️ Escopo da PoC
+## Escopo da PoC
 
 - O objetivo é demonstrar integração Liferay + Angular + Elasticsearch com regra simples e compreensível.
 - Não representa recomendação financeira nem modelo de risco completo.
