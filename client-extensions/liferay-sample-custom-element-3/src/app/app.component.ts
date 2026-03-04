@@ -22,6 +22,9 @@ export class AppComponent implements OnInit {
 	health: any;
 	healthLoaded = false;
 	loading = false;
+	simulationPersistence: any;
+	simulations: any[] = [];
+	simulationsLoaded = false;
 
 	form = {
 		aporteInicial: 10000,
@@ -100,7 +103,22 @@ export class AppComponent implements OnInit {
 		this.loadHealth();
 		this.loadBenchmarks();
 		this.loadEtfs();
+		this.loadSimulations();
 		this.simulate();
+	}
+
+	loadSimulations() {
+		this.http.get<any>('/o/etf-simulator/v1/simulations').subscribe({
+			next: (response) => {
+				this.simulations = response.items || [];
+				this.simulationsLoaded = true;
+			},
+			error: (error) => {
+				console.error(error);
+				this.simulations = [];
+				this.simulationsLoaded = true;
+			},
+		});
 	}
 
 	loadBenchmarks() {
@@ -155,8 +173,10 @@ export class AppComponent implements OnInit {
 			next: (response) => {
 				this.result = response;
 				this.benchmarkDisclaimer = response.benchmarkDisclaimer || '';
+				this.simulationPersistence = response.simulationPersistence || null;
 				this.buildChartSeries();
 				this.updateChart();
+				this.loadSimulations();
 				this.loading = false;
 			},
 			error: (error) => {
@@ -256,14 +276,52 @@ export class AppComponent implements OnInit {
 		return `${month}/${year}`;
 	}
 
-	toCurrency(value: number) {
+	toCurrency(value: any) {
+		const numericValue = this.toNumber(value);
+
 		return new Intl.NumberFormat('pt-BR', {
 			currency: 'BRL',
 			style: 'currency',
-		}).format(value || 0);
+		}).format(numericValue);
 	}
 
-	toPercent(value: number) {
-		return `${((value || 0) * 100).toFixed(2)}%`;
+	toPercent(value: any) {
+		const numericValue = this.toNumber(value);
+
+		return `${(numericValue * 100).toFixed(2)}%`;
+	}
+
+	toDate(value: any) {
+		const numericValue = this.toNumber(value);
+
+		if (!numericValue) {
+			return '-';
+		}
+
+		const epochMillis = numericValue < 1000000000000 ? numericValue * 1000 : numericValue;
+		const date = new Date(epochMillis);
+
+		if (Number.isNaN(date.getTime())) {
+			return '-';
+		}
+
+		return new Intl.DateTimeFormat('pt-BR', {
+			dateStyle: 'short',
+			timeStyle: 'short',
+		}).format(date);
+	}
+
+	toPercentNumber(value: any) {
+		return `${this.toNumber(value).toFixed(2)}%`;
+	}
+
+	private toNumber(value: any) {
+		const numericValue = Number(value);
+
+		if (Number.isNaN(numericValue)) {
+			return 0;
+		}
+
+		return numericValue;
 	}
 }

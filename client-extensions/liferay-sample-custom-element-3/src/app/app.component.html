@@ -125,5 +125,52 @@
 		</div>
 	</div>
 
+	<div class="mt-6 rounded-xl border border-slate-200 bg-white p-4" *ngIf="simulationsLoaded">
+		<div class="mb-3 flex items-center justify-between gap-3">
+			<h3 class="text-lg font-semibold">Histórico de Simulações (Elasticsearch)</h3>
+			<button
+				(click)="loadSimulations()"
+				class="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
+			>
+				Atualizar histórico
+			</button>
+		</div>
+
+		<p class="mb-3 text-xs text-slate-600" *ngIf="simulationPersistence">
+			Persistência da última simulação:
+			<strong>{{ simulationPersistence.saved ? 'salva no Elasticsearch' : 'não salva' }}</strong>
+			<span *ngIf="simulationPersistence.documentId">(id: {{ simulationPersistence.documentId }})</span>
+		</p>
+
+		<div class="overflow-auto" *ngIf="simulations.length; else emptyHistory">
+			<table class="w-full min-w-[760px] border-collapse text-sm">
+				<thead>
+					<tr class="border-b border-slate-200 text-left text-brand-muted">
+						<th class="px-2 py-2">Data</th>
+						<th class="px-2 py-2">Aporte Inicial</th>
+						<th class="px-2 py-2">Aporte Mensal</th>
+						<th class="px-2 py-2">Prazo</th>
+						<th class="px-2 py-2">Valor Final</th>
+						<th class="px-2 py-2">Retorno</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr *ngFor="let simulation of simulations" class="border-b border-slate-100">
+						<td class="px-2 py-2">{{ toDate(simulation.createdAtEpochMs) }}</td>
+						<td class="px-2 py-2">{{ toCurrency(simulation.request?.aporteInicial || 0) }}</td>
+						<td class="px-2 py-2">{{ toCurrency(simulation.request?.aporteMensal || 0) }}</td>
+						<td class="px-2 py-2">{{ simulation.request?.prazoMeses || '-' }} meses</td>
+						<td class="px-2 py-2">{{ toCurrency(simulation.resultSummary?.valorFinal || 0) }}</td>
+						<td class="px-2 py-2">{{ toPercentNumber(simulation.resultSummary?.retornoPercentual) }}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<ng-template #emptyHistory>
+			<p class="text-sm text-slate-600">Ainda não há simulações indexadas no Elasticsearch.</p>
+		</ng-template>
+	</div>
+
 	<p class="mt-4 text-sm font-semibold text-red-600" *ngIf="errorMessage">{{ errorMessage }}</p>
 </section>
