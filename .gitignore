@@ -1,0 +1,50 @@
+# --- Liferay local bundle / runtime (não versionar) ---
+/bundles/
+
+# --- Build outputs (Gradle / Java / OSGi) ---
+/.gradle/
+**/build/
+**/bin/
+**/out/
+**/.classpath
+**/.project
+**/.settings/
+
+# --- Node / Front-end outputs ---
+**/node_modules/
+/node_modules_cache/
+**/dist/
+**/.angular/
+**/.cache/
+**/.parcel-cache/
+**/.eslintcache
+
+# --- Logs / temp ---
+**/logs/
+**/*.log
+**/tmp/
+**/.DS_Store
+
+# --- Test / coverage ---
+**/coverage/
+**/.nyc_output/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.iml
+
+# --- Environment / secrets (evitar credenciais) ---
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+
+# --- Liferay configs com possíveis segredos locais ---
+**/portal-ext.properties
+**/portal-setup-wizard.properties
+**/osgi/configs/*.config
+**/osgi/configs/*.cfg
+**/osgi/configs/*.cfg.json
