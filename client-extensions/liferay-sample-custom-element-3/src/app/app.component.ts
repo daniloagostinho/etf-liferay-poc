@@ -5,6 +5,7 @@
 
 import {HttpClient} from '@angular/common/http';
 import {Component, Input, OnInit} from '@angular/core';
+import {ChartData, ChartOptions} from 'chart.js';
 
 @Component({
 	selector: 'liferay-sample-custom-element-3',
@@ -14,6 +15,8 @@ import {Component, Input, OnInit} from '@angular/core';
 export class AppComponent implements OnInit {
 	@Input('title') title = 'liferay-sample-custom-element-3';
 
+	benchmarkDisclaimer = '';
+	benchmarks: Array<{nome: string; taxaAnualEsperada: number; hipotetico: boolean}> = [];
 	errorMessage = '';
 	etfs: any[] = [];
 	health: any;
@@ -30,29 +33,92 @@ export class AppComponent implements OnInit {
 
 	result: any;
 
+	lineChartData: ChartData<'line'> = {
+		labels: [],
+		datasets: [],
+	};
+
+	lineChartOptions: ChartOptions<'line'> = {
+		animation: false,
+		interaction: {
+			intersect: false,
+			mode: 'index',
+		},
+		maintainAspectRatio: false,
+		plugins: {
+			legend: {
+				labels: {
+					color: '#111827',
+					padding: 20,
+					usePointStyle: true,
+				},
+				position: 'bottom',
+			},
+			tooltip: {
+				callbacks: {
+					label: (context) =>
+						`${context.dataset.label}: ${Number(context.parsed.y).toFixed(2)}%`,
+				},
+			},
+		},
+		scales: {
+			x: {
+				grid: {
+					display: false,
+				},
+				ticks: {
+					color: '#6b7280',
+				},
+			},
+			y: {
+				grid: {
+					color: '#d1d5db',
+				},
+				ticks: {
+					callback: (value) => `${value}%`,
+					color: '#6b7280',
+				},
+			},
+		},
+	};
+
+	periodOptions = [
+		{label: '36M', months: 36},
+		{label: '24M', months: 24},
+		{label: '12M', months: 12},
+		{label: '6M', months: 6},
+		{label: '3M', months: 3},
+		{label: 'Ano atual', months: new Date().getMonth() + 1},
+	];
+
+	selectedMonths = 36;
+	fullChartPoints: {label: string; cdi: number; ibov: number; portfolio: number}[] = [];
+
 	constructor(private http: HttpClient) {}
-
-	get chartBars() {
-		if (!this.result?.serieMensal?.length) {
-			return [];
-		}
-
-		const series = this.result.serieMensal.filter((_: any, index: number) =>
-			index % 6 === 0 || index === this.result.serieMensal.length - 1
-		);
-
-		const maxValue = Math.max(...series.map((item: any) => item.saldo), 1);
-
-		return series.map((item: any) => ({
-			heightPercent: (item.saldo / maxValue) * 100,
-			label: `Mês ${item.mes}: ${this.toCurrency(item.saldo)}`,
-		}));
-	}
 
 	ngOnInit(): void {
 		this.loadHealth();
+		this.loadBenchmarks();
 		this.loadEtfs();
 		this.simulate();
+	}
+
+	loadBenchmarks() {
+		this.http.get<any>('/o/etf-simulator/v1/benchmarks').subscribe({
+			next: (response) => {
+				this.benchmarks = response.items || [];
+				this.updateChart();
+			},
+			error: (error) => {
+				console.error(error);
+				this.benchmarks = [];
+			},
+		});
+	}
+
+	selectPeriod(months: number) {
+		this.selectedMonths = months;
+		this.updateChart();
 	}
 
 	loadEtfs() {
@@ -88,6 +154,9 @@ export class AppComponent implements OnInit {
 		this.http.post<any>('/o/etf-simulator/v1/simulate', this.form).subscribe({
 			next: (response) => {
 				this.result = response;
+				this.benchmarkDisclaimer = response.benchmarkDisclaimer || '';
+				this.buildChartSeries();
+				this.updateChart();
 				this.loading = false;
 			},
 			error: (error) => {
@@ -97,6 +166,94 @@ export class AppComponent implements OnInit {
 				this.loading = false;
 			},
 		});
+	}
+
+	private buildChartSeries() {
+		if (!this.result?.serieMensal?.length) {
+			this.fullChartPoints = [];
+			return;
+		}
+
+		const serieMensal = this.result.serieMensal as Array<{mes: number; saldo: number}>;
+		const aporteInicial = Number(this.result.aporteInicial || 0);
+		const aporteMensal = Number(this.result.aporteMensal || 0);
+
+		const benchmarkMap = new Map(
+			this.benchmarks.map((benchmark) => [benchmark.nome, benchmark.taxaAnualEsperada])
+		);
+
+		const cdiRate = benchmarkMap.get('CDI') ?? 0.12;
+		const ibovRate = benchmarkMap.get('Ibovespa') ?? 0.16;
+
+		this.fullChartPoints = serieMensal.map((item, index) => {
+			const mes = index + 1;
+			const invested = aporteInicial + aporteMensal * mes;
+			const portfolio = invested > 0 ? ((item.saldo - invested) / invested) * 100 : 0;
+			const cdi = this.compoundReturn(cdiRate, mes) * 100;
+			const ibov = this.compoundReturn(ibovRate, mes) * 100;
+
+			return {
+				cdi,
+				ibov,
+				label: this.monthLabel(mes),
+				portfolio,
+			};
+		});
+	}
+
+	private updateChart() {
+		if (!this.fullChartPoints.length) {
+			this.lineChartData = {labels: [], datasets: []};
+			return;
+		}
+
+		const points = this.fullChartPoints.slice(-this.selectedMonths);
+
+		this.lineChartData = {
+			datasets: [
+				{
+					borderColor: '#f5632b',
+					borderWidth: 2.5,
+					data: points.map((item) => Number(item.portfolio.toFixed(2))),
+					fill: false,
+					label: 'Meu Portfólio',
+					pointRadius: 0,
+					tension: 0.25,
+				},
+				{
+					borderColor: '#5b6670',
+					borderWidth: 2.5,
+					data: points.map((item) => Number(item.ibov.toFixed(2))),
+					fill: false,
+					label: 'Ibovespa',
+					pointRadius: 0,
+					tension: 0.2,
+				},
+				{
+					borderColor: '#1f3c6b',
+					borderWidth: 2.5,
+					data: points.map((item) => Number(item.cdi.toFixed(2))),
+					fill: false,
+					label: 'CDI',
+					pointRadius: 0,
+					tension: 0.15,
+				},
+			],
+			labels: points.map((item) => item.label),
+		};
+	}
+
+	private compoundReturn(annualRate: number, months: number) {
+		return Math.pow(1 + annualRate, months / 12) - 1;
+	}
+
+	private monthLabel(monthNumber: number) {
+		const now = new Date();
+		const date = new Date(now.getFullYear(), now.getMonth() - (this.form.prazoMeses - monthNumber), 1);
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const year = String(date.getFullYear()).slice(-2);
+
+		return `${month}/${year}`;
 	}
 
 	toCurrency(value: number) {
