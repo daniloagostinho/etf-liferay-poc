@@ -1,6 +1,6 @@
 # ETF Liferay POC
 
-## 🚀 Guia de Execução
+## Guia de Execução
 
 ### Instalação Inicial
 
@@ -107,6 +107,27 @@ Observação: por ser PoC local, o backend mantém aviso explícito de não uso 
 - Cards de KPI: Total Investido, Ganho Estimado, Retorno e Valor Final
 - Gráfico de linhas com seleção de período (36M, 24M, 12M, 6M, 3M, Ano atual)
 - Tabela de histórico integrada ao Elasticsearch (datas e métricas formatadas)
+
+## 🔍 Integração com Elasticsearch
+
+### Status Atual
+
+O módulo `etf-simulator-api` possui uma integração **básica** com Elasticsearch:
+
+- **Monitoramento de Health Check**: O endpoint `/health` verifica a disponibilidade do cluster Elasticsearch em `http://127.0.0.1:9201`
+- **Diagnóstico**: Retorna informações sobre o status do cluster (nome, status, nós ativos)
+- **Persistência**: **Ainda não implementada**
+
+### O que será implementado posteriormente
+
+A integração com Elasticsearch será **expandida** para:
+
+- Armazenar simulações de investimentos realizadas
+- Indexar ETFs e benchmarks para buscas otimizadas
+- Recuperar dados históricos de simulações
+- Implementar busca full-text avançada
+
+Atualmente, todos os dados (ETFs, benchmarks e simulações) são **estáticos** (em memória) e não são **persistidos** no Elasticsearch.
 
 ## Escopo da PoC
 
