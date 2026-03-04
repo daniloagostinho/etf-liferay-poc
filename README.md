@@ -108,7 +108,7 @@ Observação: por ser PoC local, o backend mantém aviso explícito de não uso 
 - Gráfico de linhas com seleção de período (36M, 24M, 12M, 6M, 3M, Ano atual)
 - Tabela de histórico integrada ao Elasticsearch (datas e métricas formatadas)
 
-## 🔍 Integração com Elasticsearch
+## Integração com Elasticsearch
 
 ### Status Atual
 
