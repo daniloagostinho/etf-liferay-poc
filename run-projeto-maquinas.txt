@@ -1,0 +1,20 @@
+Perfeito — na outra máquina, para funcionar front + backend, roda isso na raiz do projeto:
+
+chmod +x ./gradlew
+./gradlew initBundle
+./gradlew :modules:etf-simulator-api:deploy
+./gradlew :client-extensions:liferay-sample-custom-element-3:deploy
+Se quiser garantir tudo de uma vez (todos os CEs + módulos):
+
+./gradlew deploy
+Pré-requisitos importantes:
+
+Java compatível com seu DXP (normalmente JDK 17)
+Node/Yarn (o build do CE usa isso)
+Internet no primeiro initBundle (vai baixar bundle/dependências)
+Depois disso, com o servidor já ligado (como você disse que já sabe), a API fica em:
+
+/o/etf-simulator/v1/health
+/o/etf-simulator/v1/etfs
+/o/etf-simulator/v1/simulate
+GPT-5.3-Codex • 0.9x
