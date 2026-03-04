@@ -1,59 +1,10 @@
 <section class="mx-auto max-w-[1400px] rounded-2xl bg-brand-panel p-6 text-brand-dark shadow-soft md:p-8">
-	<header class="mb-6 flex flex-wrap items-end justify-between gap-4">
-		<div>
-			<h2 class="text-4xl font-semibold tracking-tight">Retorno acumulado</h2>
-			<p class="mt-2 text-sm text-brand-muted">Simulador de ETFs com benchmark de mercado</p>
-		</div>
-		<div
-			*ngIf="healthLoaded"
-			class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold"
-		>
-			<span>Elasticsearch</span>
-			<span
-				class="h-2.5 w-2.5 rounded-full"
-				[ngClass]="health?.elasticsearch?.reachable ? 'bg-emerald-500' : 'bg-red-500'"
-			></span>
-			<span>{{ health?.elasticsearch?.reachable ? (health?.elasticsearch?.status || 'online') : 'offline' }}</span>
-		</div>
+	<header class="mb-6">
+		<h1 class="text-4xl font-bold tracking-tight md:text-5xl">Simulador de ETFs</h1>
+			<p class="mt-2 text-sm text-brand-muted md:text-2xl">Compare o desempenho projetado do seu portfólio com os benchmarks Ibovespa e CDI.</p>
 	</header>
 
-	<div class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-		<div class="rounded-xl border border-slate-200 bg-white p-4">
-			<p class="text-xs uppercase text-brand-muted">Valor Final</p>
-			<p class="mt-2 text-2xl font-semibold">{{ toCurrency(result?.valorFinal || 0) }}</p>
-		</div>
-		<div class="rounded-xl border border-slate-200 bg-white p-4">
-			<p class="text-xs uppercase text-brand-muted">Total Investido</p>
-			<p class="mt-2 text-2xl font-semibold">{{ toCurrency(result?.totalInvestido || 0) }}</p>
-		</div>
-		<div class="rounded-xl border border-slate-200 bg-white p-4">
-			<p class="text-xs uppercase text-brand-muted">Ganho Estimado</p>
-			<p class="mt-2 text-2xl font-semibold text-emerald-600">{{ toCurrency(result?.ganhoEstimado || 0) }}</p>
-		</div>
-		<div class="rounded-xl border border-slate-200 bg-white p-4">
-			<p class="text-xs uppercase text-brand-muted">Retorno</p>
-			<p class="mt-2 text-2xl font-semibold">{{ (result?.retornoPercentual || 0).toFixed(2) }}%</p>
-		</div>
-	</div>
-
-	<div class="rounded-2xl border border-slate-200 bg-brand-graphBg p-4 md:p-6">
-		<div class="mb-3 flex items-center justify-end gap-2 border-b border-slate-300 pb-2">
-			<button
-				*ngFor="let period of periodOptions"
-				(click)="selectPeriod(period.months)"
-				class="border-b-[3px] px-2 pb-2 text-[24px] text-lg font-semibold transition"
-				[ngClass]="selectedMonths === period.months ? 'border-brand text-brand' : 'border-brand-deep text-brand-deep hover:text-brand'"
-			>
-				{{ period.label }}
-			</button>
-		</div>
-
-		<div class="h-[420px]">
-			<canvas baseChart [data]="lineChartData" [options]="lineChartOptions" [type]="'line'"></canvas>
-		</div>
-	</div>
-
-	<div class="mt-6 grid gap-4 lg:grid-cols-2">
+	<div class="grid gap-4 lg:grid-cols-2">
 		<div class="rounded-xl border border-slate-200 bg-white p-4">
 			<h3 class="mb-4 text-lg font-semibold">Parâmetros da Simulação</h3>
 			<div class="space-y-3">
@@ -101,7 +52,7 @@
 			<button
 				(click)="simulate()"
 				[disabled]="loading"
-				class="mt-5 w-full rounded-lg bg-brand px-4 py-3 font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+				class="mt-5 w-full rounded-lg bg-[#0B5FFF] px-4 py-3 text-lg font-semibold text-white transition hover:bg-[#0053F0] disabled:cursor-not-allowed disabled:opacity-60"
 			>
 				{{ loading ? 'Simulando...' : 'Atualizar simulação' }}
 			</button>
@@ -129,6 +80,48 @@
 					</tbody>
 				</table>
 			</div>
+		</div>
+	</div>
+
+	<header class="mb-4 mt-8 flex flex-wrap items-end justify-between gap-4">
+		<div>
+			<h2 class="text-4xl font-semibold tracking-tight">Retorno acumulado</h2>
+		</div>
+	</header>
+
+	<div class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+		<div class="rounded-xl border border-slate-200 bg-white p-4">
+			<p class="text-xs uppercase text-brand-muted">Valor Final</p>
+			<p class="mt-2 text-2xl font-semibold">{{ toCurrency(result?.valorFinal || 0) }}</p>
+		</div>
+		<div class="rounded-xl border border-slate-200 bg-white p-4">
+			<p class="text-xs uppercase text-brand-muted">Total Investido</p>
+			<p class="mt-2 text-2xl font-semibold">{{ toCurrency(result?.totalInvestido || 0) }}</p>
+		</div>
+		<div class="rounded-xl border border-slate-200 bg-white p-4">
+			<p class="text-xs uppercase text-brand-muted">Ganho Estimado</p>
+			<p class="mt-2 text-2xl font-semibold text-emerald-600">{{ toCurrency(result?.ganhoEstimado || 0) }}</p>
+		</div>
+		<div class="rounded-xl border border-slate-200 bg-white p-4">
+			<p class="text-xs uppercase text-brand-muted">Retorno</p>
+			<p class="mt-2 text-2xl font-semibold">{{ (result?.retornoPercentual || 0).toFixed(2) }}%</p>
+		</div>
+	</div>
+
+	<div class="rounded-2xl border border-slate-200 bg-brand-graphBg p-4 md:p-6">
+		<div class="mb-3 flex items-center justify-end gap-2 border-b border-slate-300 pb-2">
+			<button
+				*ngFor="let period of periodOptions"
+				(click)="selectPeriod(period.months)"
+				class="border-b-[3px] px-2 pb-2 text-[24px] text-lg font-semibold transition"
+				[ngClass]="selectedMonths === period.months ? 'border-brand text-brand' : 'border-brand-deep text-brand-deep hover:text-brand'"
+			>
+				{{ period.label }}
+			</button>
+		</div>
+
+		<div class="h-[420px]">
+			<canvas baseChart [data]="lineChartData" [options]="lineChartOptions" [type]="'line'"></canvas>
 		</div>
 	</div>
 
