@@ -6,6 +6,7 @@
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
+import {NgChartsModule} from 'ng2-charts';
 
 import {AppComponent} from './app.component';
 
@@ -13,7 +14,7 @@ describe('AppComponent', () => {
 	beforeEach(() =>
 		TestBed.configureTestingModule({
 			declarations: [AppComponent],
-			imports: [FormsModule, HttpClientTestingModule],
+			imports: [FormsModule, HttpClientTestingModule, NgChartsModule],
 		})
 	);
 

@@ -8,13 +8,14 @@ import {Injector, NgModule} from '@angular/core';
 import {createCustomElement} from '@angular/elements';
 import {FormsModule} from '@angular/forms';
 import {BrowserModule} from '@angular/platform-browser';
+import {NgChartsModule} from 'ng2-charts';
 
 import {AppComponent} from './app.component';
 
 @NgModule({
 	bootstrap: [AppComponent],
 	declarations: [AppComponent],
-	imports: [BrowserModule, FormsModule, HttpClientModule],
+	imports: [BrowserModule, FormsModule, HttpClientModule, NgChartsModule],
 	providers: [],
 })
 export class AppModule {
